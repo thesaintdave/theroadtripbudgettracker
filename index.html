@@ -399,7 +399,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db        = firebase.database();
 const stateRef  = db.ref('budget');
-const SEED_VER  = 3; // bump to force a re-seed
+const SEED_VER  = 4; // bump to force a re-seed
 
 // ── State ─────────────────────────────────────────────────────────────────────
 let state = { income: [], expenses: [] };
@@ -414,16 +414,7 @@ function mkExpense() {
 }
 
 function defaults() {
-  state.income = [
-    { id: uid(), source: 'Deposit from Expenses Account',             amount: '386',   date: '2026-06-17' },
-    { id: uid(), source: 'Deposit from Expenses Account',             amount: '44',    date: '2026-06-16' },
-    { id: uid(), source: 'Venmo Cashout',                             amount: '227',   date: '2026-06-15' },
-    { id: uid(), source: 'Transfer from 360 Performance Savings',     amount: '200',   date: '2026-06-09' },
-    { id: uid(), source: 'Amazon Refund',                             amount: '10.88', date: '2026-06-08' },
-    { id: uid(), source: 'Amazon Refund',                             amount: '16.99', date: '2026-06-08' },
-    { id: uid(), source: 'Amazon Refund',                             amount: '8.70',  date: '2026-06-08' },
-    { id: uid(), source: 'Amazon Refund',                             amount: '10.88', date: '2026-06-08' },
-  ];
+  state.income = [];
   state.expenses = [
     { id: uid(), name: 'Amazon Marketplace',                        amount: '8.76',   date: '2026-06-17', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
     { id: uid(), name: "Keke's Restaurant (Nashville, TN)",         amount: '15.01',  date: '2026-06-17', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
