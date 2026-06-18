@@ -397,8 +397,9 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
-const db       = firebase.database();
-const stateRef = db.ref('budget');
+const db        = firebase.database();
+const stateRef  = db.ref('budget');
+const SEED_VER  = 2; // bump to force a re-seed
 
 // ── State ─────────────────────────────────────────────────────────────────────
 let state = { income: [], expenses: [] };
@@ -414,11 +415,66 @@ function mkExpense() {
 
 function defaults() {
   state.income = [
-    { id: uid(), source: 'Sublease Payment', amount: '', date: '' },
-    { id: uid(), source: 'Public Assistance', amount: '', date: '' },
-    { id: uid(), source: '', amount: '', date: '' },
+    { id: uid(), source: 'Deposit from Stephanie Nadia',              amount: '20',    date: '2026-06-17' },
+    { id: uid(), source: 'Deposit from Expenses Account',             amount: '386',   date: '2026-06-17' },
+    { id: uid(), source: 'Deposit from Stephanie Nadia',              amount: '142',   date: '2026-06-17' },
+    { id: uid(), source: 'Deposit from Expenses Account',             amount: '44',    date: '2026-06-16' },
+    { id: uid(), source: 'Deposit from Stephanie Nadia',              amount: '24',    date: '2026-06-16' },
+    { id: uid(), source: 'Venmo Cashout',                             amount: '227',   date: '2026-06-15' },
+    { id: uid(), source: 'Deposit from Stephanie Nadia',              amount: '32',    date: '2026-06-13' },
+    { id: uid(), source: 'Transfer from 360 Performance Savings',     amount: '200',   date: '2026-06-09' },
+    { id: uid(), source: 'Amazon Refund',                             amount: '10.88', date: '2026-06-08' },
+    { id: uid(), source: 'Amazon Refund',                             amount: '16.99', date: '2026-06-08' },
+    { id: uid(), source: 'Amazon Refund',                             amount: '8.70',  date: '2026-06-08' },
+    { id: uid(), source: 'Amazon Refund',                             amount: '10.88', date: '2026-06-08' },
+    { id: uid(), source: 'Deposit from Stephanie Nadia',              amount: '70',    date: '2026-06-08' },
+    { id: uid(), source: 'Deposit from Stephanie Nadia',              amount: '80',    date: '2026-06-08' },
+    { id: uid(), source: 'Deposit from Stephanie Nadia',              amount: '100',   date: '2026-06-08' },
+    { id: uid(), source: 'Kids bed — Deposit from Stephanie Nadia',   amount: '110',   date: '2026-06-08' },
+    { id: uid(), source: 'Deposit from Stephanie Nadia',              amount: '10',    date: '2026-06-08' },
+    { id: uid(), source: 'Home — Deposit from Stephanie Nadia',       amount: '150',   date: '2026-06-07' },
+    { id: uid(), source: 'Deposit from Stephanie Nadia',              amount: '80',    date: '2026-06-07' },
   ];
-  state.expenses = Array.from({ length: 5 }, () => mkExpense());
+  state.expenses = [
+    { id: uid(), name: 'Amazon Marketplace',                        amount: '8.76',   date: '2026-06-17', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
+    { id: uid(), name: "Keke's Restaurant (Nashville, TN)",         amount: '15.01',  date: '2026-06-17', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
+    { id: uid(), name: 'Anthropic Claude Subscription',             amount: '21.78',  date: '2026-06-17', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
+    { id: uid(), name: 'Metropolis Parking (Nashville, TN)',        amount: '21',     date: '2026-06-17', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
+    { id: uid(), name: "Buc-ee's (Calhoun, GA)",                    amount: '6.94',   date: '2026-06-17', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
+    { id: uid(), name: "Buc-ee's Gas (Calhoun, GA)",                amount: '47.44',  date: '2026-06-17', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
+    { id: uid(), name: 'Withdrawal to Expenses Account',            amount: '142',    date: '2026-06-17', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
+    { id: uid(), name: 'Target.com',                                amount: '43.89',  date: '2026-06-16', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
+    { id: uid(), name: 'Transfer to Stephanie Nadia',               amount: '100',    date: '2026-06-16', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
+    { id: uid(), name: "Buc-ee's (Calhoun, GA)",                    amount: '52.28',  date: '2026-06-15', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
+    { id: uid(), name: 'Amazon Marketplace',                        amount: '18.01',  date: '2026-06-13', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
+    { id: uid(), name: 'Walmart (Buford, GA)',                      amount: '31.65',  date: '2026-06-13', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
+    { id: uid(), name: 'Marshalls (Buford, GA)',                    amount: '10.59',  date: '2026-06-12', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
+    { id: uid(), name: 'Marshalls (Buford, GA)',                    amount: '21.19',  date: '2026-06-12', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
+    { id: uid(), name: 'CVS Pharmacy (Dacula, GA)',                 amount: '57.86',  date: '2026-06-11', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
+    { id: uid(), name: 'Apple.com Subscription',                    amount: '21.78',  date: '2026-06-10', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
+    { id: uid(), name: 'Amazon Marketplace',                        amount: '67.82',  date: '2026-06-10', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
+    { id: uid(), name: 'Marathon Gas (Calhoun, GA)',                amount: '5.40',   date: '2026-06-10', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
+    { id: uid(), name: 'Amazon Marketplace',                        amount: '43.79',  date: '2026-06-10', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
+    { id: uid(), name: 'Amazon Marketplace',                        amount: '44.99',  date: '2026-06-10', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
+    { id: uid(), name: 'Amazon Marketplace',                        amount: '43.79',  date: '2026-06-10', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
+    { id: uid(), name: 'ExxonMobil Gas (Charlottesville, VA)',      amount: '66.63',  date: '2026-06-10', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
+    { id: uid(), name: 'Transfer to Expenses Account',              amount: '0.78',   date: '2026-06-10', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
+    { id: uid(), name: 'Transfer to 360 Savings',                   amount: '25',     date: '2026-06-10', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
+    { id: uid(), name: 'Transfer to Expenses Account',              amount: '85',     date: '2026-06-10', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
+    { id: uid(), name: 'PBA MSG Online (Knoxville, TN)',            amount: '2',      date: '2026-06-09', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
+    { id: uid(), name: 'Stock & Barrel Restaurant (Knoxville, TN)', amount: '79.74',  date: '2026-06-09', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
+    { id: uid(), name: 'ExxonMobil Gas (Charlottesville, VA)',      amount: '9.76',   date: '2026-06-09', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
+    { id: uid(), name: 'ExxonMobil Gas (Charlottesville, VA)',      amount: '15.90',  date: '2026-06-09', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
+    { id: uid(), name: 'Hotwire Hotel Booking',                     amount: '104.98', date: '2026-06-09', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
+    { id: uid(), name: 'ExxonMobil Gas (New York, NY)',             amount: '67.18',  date: '2026-06-09', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
+    { id: uid(), name: 'Marshalls (Buford, GA)',                    amount: '58.27',  date: '2026-06-09', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
+    { id: uid(), name: 'Metropolis Parking (Nashville, TN)',        amount: '2',      date: '2026-06-08', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
+    { id: uid(), name: 'Flatbush Food Co-op (Brooklyn, NY)',        amount: '12.89',  date: '2026-06-08', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
+    { id: uid(), name: 'Clean Rite Laundromat (Brooklyn, NY)',      amount: '30',     date: '2026-06-08', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
+    { id: uid(), name: 'Marathon Gas (Calhoun, GA)',                amount: '51.13',  date: '2026-06-08', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
+    { id: uid(), name: 'Urban Air (Brooklyn/Englewood, NJ)',        amount: '31.01',  date: '2026-06-07', note: '', willRefund: 'yes', isRefunded: 'yes', refundAmt: '31.01' },
+    { id: uid(), name: 'ExxonMobil Gas (New York, NY)',             amount: '30.04',  date: '2026-06-07', note: '', willRefund: 'no',  isRefunded: 'no',  refundAmt: '' },
+  ];
 }
 
 // ── Save to Firebase (debounced 400ms) ────────────────────────────────────────
@@ -611,11 +667,11 @@ document.addEventListener('change', e => {
 // ── Boot: load from Firebase, then listen for remote changes ──────────────────
 stateRef.once('value', snapshot => {
   const data = snapshot.val();
-  if (data) {
-    state = data;
+  if (data && data._seedVer === SEED_VER) {
+    state = { income: data.income || [], expenses: data.expenses || [] };
   } else {
     defaults();
-    stateRef.set(JSON.parse(JSON.stringify(state)));
+    stateRef.set({ ...JSON.parse(JSON.stringify(state)), _seedVer: SEED_VER });
   }
   renderAll();
   document.getElementById('saved-badge').style.opacity = '0.4';
