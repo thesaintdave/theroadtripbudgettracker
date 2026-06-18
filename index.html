@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>St. Jean's Road Trip Budget</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@400;500;600;700&family=Archivo:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue:    #006BB6;
+      --orange:  #F58426;
+      --silver:  #BEC0C2;
+      --ink:     #11151C;
+      --paper:   #EDEFF2;
+      --card:    #ffffff;
+      --line:    #EDEFF2;
+      --muted:   #5C6470;
+      --muted-2: #9097A1;
+      --field-border: #D6DAE0;
+      --field-hover:  #F7F8FA;
+      --shadow: 0 1px 2px rgba(17,21,28,0.08);
+
+      --f-display: 'Anton', sans-serif;
+      --f-label:   'Oswald', sans-serif;
+      --f-body:    'Archivo', system-ui, sans-serif;
+    }
+
+    body {
+      font-family: var(--f-body);
+      background: var(--paper);
+      color: var(--ink);
+      min-height: 100vh;
+      padding-bottom: 80px;
+    }
+
+    header {
+      position: relative;
+      background: var(--blue);
+      color: #fff;
+      padding: 26px 24px 24px;
+      text-align: center;
+      overflow: hidden;
+    }
+    header .inner { max-width: 1000px; margin: 0 auto; }
+    header h1 {
+      font-family: var(--f-display);
+      font-weight: 400;
+      font-size: clamp(2.4rem, 7vw, 4.6rem);
+      line-height: 0.92;
+      letter-spacing: 0.01em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    header .subtitle {
+      font-family: var(--f-label);
+      font-weight: 400;
+      font-size: 0.8rem;
+      letter-spacing: 0.3em;
+      text-indent: 0.3em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.72);
+    }
+    #saved-badge {
+      position: absolute;
+      top: 18px;
+      right: 20px;
+      font-family: var(--f-label);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--orange);
+      transition: opacity 0.6s;
+    }
+    .trim { display: flex; height: 8px; }
+    .trim span { flex: 1; }
+    .trim .t-orange { background: var(--orange); }
+    .trim .t-silver { background: var(--silver); }
+    .trim .t-ink    { background: var(--ink); }
+
+    main { max-width: 1000px; margin: 0 auto; padding: 26px 18px; }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 14px;
+      margin-bottom: 30px;
+    }
+    .summary-card {
+      background: var(--card);
+      padding: 16px 18px 18px;
+      box-shadow: var(--shadow);
+      border-top: 5px solid transparent;
+    }
+    .summary-card.s-income    { border-top-color: var(--blue); }
+    .summary-card.s-spent     { border-top-color: var(--orange); }
+    .summary-card.s-refunds   { border-top-color: var(--silver); }
+    .summary-card.s-remaining { border-top-color: var(--orange); background: var(--ink); }
+    .summary-card .lbl {
+      font-family: var(--f-label);
+      font-weight: 600;
+      font-size: 0.66rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .summary-card.s-remaining .lbl { color: var(--orange); }
+    .summary-card .val {
+      font-family: var(--f-display);
+      font-size: 2.1rem;
+      letter-spacing: 0.01em;
+      font-variant-numeric: tabular-nums;
+      margin-top: 8px;
+    }
+    .summary-card.s-income   .val { color: var(--blue); }
+    .summary-card.s-spent    .val { color: var(--orange); }
+    .summary-card.s-refunds  .val { color: var(--ink); }
+    .summary-card.s-remaining .val { font-size: 2.35rem; margin-top: 6px; color: #fff; }
+    .summary-card.s-remaining .val.negative { color: var(--orange); }
+
+    .section { margin-bottom: 34px; }
+    .section-hd { display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
+    .section-hd h2 {
+      font-family: var(--f-display);
+      font-size: 1.6rem;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: var(--ink);
+    }
+    .section-hd .tick { width: 26px; height: 5px; }
+    .section-hd .tick.blue   { background: var(--blue); }
+    .section-hd .tick.orange { background: var(--orange); }
+    .section-hd .spacer { flex: 1; }
+
+    .btn-add {
+      border: none;
+      background: var(--orange);
+      cursor: pointer;
+      font-family: var(--f-label);
+      font-weight: 600;
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #fff;
+      padding: 9px 16px;
+      border-radius: 2px;
+      transition: all .16s ease;
+    }
+    .btn-add:hover { background: var(--ink); }
+    .btn-del {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 1.3rem;
+      line-height: 1;
+      color: #C2C7CF;
+      padding: 4px 8px;
+      border-radius: 2px;
+      transition: all .14s ease;
+    }
+    .btn-del:hover { color: #fff; background: var(--orange); }
+
+    .tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; background: var(--card); box-shadow: var(--shadow); }
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      font-family: var(--f-label);
+      font-weight: 600;
+      font-size: 0.64rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-align: left;
+      padding: 11px 14px;
+      white-space: nowrap;
+    }
+    thead th.r { text-align: right; }
+    thead th.c { text-align: center; }
+    #income-tbl  thead th { border-bottom: 2px solid var(--blue); }
+    #expense-tbl thead th { border-bottom: 2px solid var(--orange); }
+    tbody tr { border-bottom: 1px solid var(--line); }
+    tbody td { padding: 3px 9px; vertical-align: middle; }
+    td.rn {
+      text-align: center;
+      font-family: var(--f-display);
+      font-size: 0.95rem;
+      color: #C2C7CF;
+      user-select: none;
+      padding: 3px 6px;
+    }
+    td.del { text-align: center; padding: 3px 5px; }
+
+    .ti {
+      width: 100%;
+      border: 1px solid transparent;
+      border-radius: 2px;
+      padding: 9px 10px;
+      font-family: var(--f-body);
+      font-size: 0.98rem;
+      color: var(--ink);
+      background: transparent;
+      transition: all .14s ease;
+    }
+    .ti:hover { border-color: var(--field-border); background: var(--field-hover); }
+    .ti:focus { outline: none; border-color: var(--blue); background: #fff; box-shadow: 0 0 0 3px rgba(0,107,182,0.13); }
+    .ti.note { font-style: italic; font-size: 0.95rem; }
+    .ti.dt   { font-size: 0.86rem; padding: 8px 10px; color-scheme: light; }
+
+    .money-wrap {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      border: 1px solid transparent;
+      border-radius: 2px;
+      transition: all .14s ease;
+    }
+    .money-wrap:hover { border-color: var(--field-border); background: var(--field-hover); }
+    .money-wrap:focus-within { border-color: var(--blue); background: #fff; box-shadow: 0 0 0 3px rgba(0,107,182,0.13); }
+    .money-wrap .sym {
+      padding-left: 10px;
+      font-family: var(--f-label);
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--muted-2);
+    }
+    .ti.num {
+      flex: 1;
+      min-width: 0;
+      text-align: right;
+      border: none;
+      padding: 9px 10px 9px 2px;
+      font-family: var(--f-label);
+      font-weight: 600;
+      font-size: 1rem;
+      font-variant-numeric: tabular-nums;
+      background: transparent;
+    }
+    .ti.num:focus { outline: none; box-shadow: none; background: transparent; }
+    .money-wrap.disabled { opacity: 0.4; }
+    .ti:disabled { cursor: not-allowed; }
+
+    .rsel {
+      border: 1.5px solid var(--field-border);
+      border-radius: 2px;
+      padding: 8px 9px;
+      font-family: var(--f-label);
+      font-weight: 600;
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      color: var(--ink);
+      background: #fff;
+      cursor: pointer;
+    }
+    .rsel:focus { outline: none; box-shadow: 0 0 0 3px rgba(0,107,182,0.13); }
+    .rsel option { font-family: var(--f-label); }
+    .rsel.will-yes { border-color: var(--blue);   color: var(--blue);   background: rgba(0,107,182,0.08); }
+    .rsel.got-yes  { border-color: var(--orange); color: var(--orange); background: rgba(245,132,38,0.10); }
+    .rsel:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .empty-row td {
+      text-align: center;
+      padding: 28px;
+      font-family: var(--f-body);
+      font-style: italic;
+      font-size: 0.98rem;
+      color: var(--muted-2);
+    }
+
+    .foot {
+      text-align: center;
+      margin-top: 28px;
+      font-family: var(--f-label);
+      font-weight: 400;
+      font-size: 0.66rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted-2);
+    }
+
+    /* loading state */
+    #loading-overlay {
+      position: fixed; inset: 0;
+      background: var(--paper);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 999;
+      font-family: var(--f-label);
+      font-size: 0.8rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      transition: opacity 0.4s;
+    }
+  </style>
+</head>
+<body>
+
+<div id="loading-overlay">Loading…</div>
+
+<header>
+  <span id="saved-badge">● Saved</span>
+  <div class="inner">
+    <h1>St. Jean's Road Trip Budget</h1>
+    <div class="subtitle">Summer in the South 2026</div>
+  </div>
+</header>
+<div class="trim"><span class="t-orange"></span><span class="t-silver"></span><span class="t-ink"></span></div>
+
+<main>
+  <div class="summary-grid">
+    <div class="summary-card s-income">
+      <div class="lbl">Total Income</div>
+      <div class="val" id="sum-income">$0.00</div>
+    </div>
+    <div class="summary-card s-spent">
+      <div class="lbl">Total Spent</div>
+      <div class="val" id="sum-spent">$0.00</div>
+    </div>
+    <div class="summary-card s-refunds">
+      <div class="lbl">Pending Refunds</div>
+      <div class="val" id="sum-refunds">$0.00</div>
+    </div>
+    <div class="summary-card s-remaining">
+      <div class="lbl">Budget Remaining</div>
+      <div class="val" id="sum-remaining">$0.00</div>
+    </div>
+  </div>
+
+  <!-- Income -->
+  <div class="section">
+    <div class="section-hd">
+      <h2>Income</h2>
+      <span class="tick blue"></span>
+      <span class="spacer"></span>
+      <button class="btn-add" onclick="addIncome()">+ Add Source</button>
+    </div>
+    <div class="tbl-wrap">
+      <table id="income-tbl">
+        <thead>
+          <tr>
+            <th style="min-width:240px">Source</th>
+            <th class="r" style="min-width:130px">Amount</th>
+            <th style="min-width:150px">Date</th>
+            <th style="width:44px"></th>
+          </tr>
+        </thead>
+        <tbody id="income-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Expenses -->
+  <div class="section">
+    <div class="section-hd">
+      <h2>Expenses</h2>
+      <span class="tick orange"></span>
+      <span class="spacer"></span>
+      <button class="btn-add" onclick="addExpense()">+ Add Expense</button>
+    </div>
+    <div class="tbl-wrap">
+      <table id="expense-tbl">
+        <thead>
+          <tr>
+            <th class="c" style="width:34px">No.</th>
+            <th style="min-width:180px">Expense</th>
+            <th class="r" style="min-width:110px">Amount</th>
+            <th style="min-width:148px">Date</th>
+            <th style="min-width:180px">Note / Reason</th>
+            <th class="c" style="min-width:108px">Will Refund?</th>
+            <th class="c" style="min-width:96px">Refunded?</th>
+            <th class="r" style="min-width:108px">Refund Amt</th>
+            <th style="width:44px"></th>
+          </tr>
+        </thead>
+        <tbody id="expense-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <p class="foot">Synced to Firebase — your ledger persists across all devices</p>
+</main>
+
+<script>
+// ── Firebase setup ────────────────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyDUzjJF1fh50LJrZB3ZkQlOND8p8hw2C4w",
+  authDomain: "road-trip-budget-tracker.firebaseapp.com",
+  databaseURL: "https://road-trip-budget-tracker-default-rtdb.firebaseio.com",
+  projectId: "road-trip-budget-tracker",
+  storageBucket: "road-trip-budget-tracker.firebasestorage.app",
+  messagingSenderId: "207099298058",
+  appId: "1:207099298058:web:da65da2c5b518ba2927af3"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db       = firebase.database();
+const stateRef = db.ref('budget');
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let state = { income: [], expenses: [] };
+let localWrite = false; // prevents remote listener from stomping local edits
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+}
+
+function mkExpense() {
+  return { id: uid(), name: '', amount: '', date: '', note: '', willRefund: 'no', isRefunded: 'no', refundAmt: '' };
+}
+
+function defaults() {
+  state.income = [
+    { id: uid(), source: 'Sublease Payment', amount: '', date: '' },
+    { id: uid(), source: 'Public Assistance', amount: '', date: '' },
+    { id: uid(), source: '', amount: '', date: '' },
+  ];
+  state.expenses = Array.from({ length: 5 }, () => mkExpense());
+}
+
+// ── Save to Firebase (debounced 400ms) ────────────────────────────────────────
+let saveTimer;
+function save() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    localWrite = true;
+    stateRef.set(JSON.parse(JSON.stringify(state))).then(() => {
+      localWrite = false;
+      const b = document.getElementById('saved-badge');
+      b.style.opacity = '1';
+      setTimeout(() => b.style.opacity = '0.7', 1800);
+    });
+  }, 400);
+}
+
+// ── Calculations ──────────────────────────────────────────────────────────────
+function calc() {
+  const totalIncome    = state.income.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
+  const totalSpent     = state.expenses.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
+  const pendingRefunds = state.expenses.reduce((s, r) =>
+    r.willRefund === 'yes' ? s + (parseFloat(r.refundAmt) || 0) : s, 0);
+  const budgetRemaining = totalIncome - (totalSpent - pendingRefunds);
+  return { totalIncome, totalSpent, pendingRefunds, budgetRemaining };
+}
+
+function money(n) {
+  const abs = '$' + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return n < 0 ? '−' + abs : abs;
+}
+
+function refreshSummary() {
+  const { totalIncome, totalSpent, pendingRefunds, budgetRemaining } = calc();
+  document.getElementById('sum-income').textContent  = money(totalIncome);
+  document.getElementById('sum-spent').textContent   = money(totalSpent);
+  document.getElementById('sum-refunds').textContent = money(pendingRefunds);
+  const rem = document.getElementById('sum-remaining');
+  rem.textContent = money(budgetRemaining);
+  rem.className = 'val' + (budgetRemaining < 0 ? ' negative' : '');
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function moneyCell(r, field, table, disabled) {
+  return `<div class="money-wrap${disabled ? ' disabled' : ''}">
+    <span class="sym">$</span>
+    <input class="ti num" type="number" min="0" step="0.01"
+      data-id="${r.id}" data-f="${field}" data-t="${table}"
+      value="${esc(r[field])}" placeholder="0.00" ${disabled ? 'disabled' : ''}>
+  </div>`;
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function renderIncome() {
+  const tbody = document.getElementById('income-body');
+  if (!state.income.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="4">No income on the board yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = state.income.map(r => `
+    <tr>
+      <td><input class="ti" type="text"
+        data-id="${r.id}" data-f="source" data-t="income"
+        value="${esc(r.source)}" placeholder="Source name…"></td>
+      <td>${moneyCell(r, 'amount', 'income', false)}</td>
+      <td><input class="ti dt" type="date"
+        data-id="${r.id}" data-f="date" data-t="income"
+        value="${esc(r.date)}"></td>
+      <td class="del"><button class="btn-del" onclick="delRow('income','${r.id}')">×</button></td>
+    </tr>`).join('');
+}
+
+function renderExpenses() {
+  const tbody = document.getElementById('expense-body');
+  if (!state.expenses.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="9">No expenses logged yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = state.expenses.map((r, i) => {
+    const will = r.willRefund === 'yes';
+    const got  = r.isRefunded === 'yes';
+    return `
+    <tr>
+      <td class="rn">${i + 1}</td>
+      <td><input class="ti" type="text"
+        data-id="${r.id}" data-f="name" data-t="expenses"
+        value="${esc(r.name)}" placeholder="Expense name…"></td>
+      <td>${moneyCell(r, 'amount', 'expenses', false)}</td>
+      <td><input class="ti dt" type="date"
+        data-id="${r.id}" data-f="date" data-t="expenses"
+        value="${esc(r.date)}"></td>
+      <td><input class="ti note" type="text"
+        data-id="${r.id}" data-f="note" data-t="expenses"
+        value="${esc(r.note)}" placeholder="Add a note…"></td>
+      <td style="text-align:center">
+        <select class="rsel${will ? ' will-yes' : ''}"
+          data-id="${r.id}" data-f="willRefund" data-t="expenses">
+          <option value="no"${!will ? ' selected' : ''}>No</option>
+          <option value="yes"${will ? ' selected' : ''}>Yes</option>
+        </select>
+      </td>
+      <td style="text-align:center">
+        <select class="rsel${got ? ' got-yes' : ''}"
+          data-id="${r.id}" data-f="isRefunded" data-t="expenses" ${!will ? 'disabled' : ''}>
+          <option value="no"${!got ? ' selected' : ''}>No</option>
+          <option value="yes"${got ? ' selected' : ''}>Yes</option>
+        </select>
+      </td>
+      <td>${moneyCell(r, 'refundAmt', 'expenses', !will)}</td>
+      <td class="del"><button class="btn-del" onclick="delRow('expenses','${r.id}')">×</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderAll() {
+  renderIncome();
+  renderExpenses();
+  refreshSummary();
+}
+
+// ── Actions ───────────────────────────────────────────────────────────────────
+function addIncome() {
+  state.income.push({ id: uid(), source: '', amount: '', date: '' });
+  renderIncome();
+  save();
+  const rows = document.querySelectorAll('#income-body input[data-f="source"]');
+  if (rows.length) rows[rows.length - 1].focus();
+}
+
+function addExpense() {
+  state.expenses.push(mkExpense());
+  renderExpenses();
+  save();
+  const rows = document.querySelectorAll('#expense-body input[data-f="name"]');
+  if (rows.length) rows[rows.length - 1].focus();
+}
+
+function delRow(table, id) {
+  state[table] = state[table].filter(r => r.id !== id);
+  table === 'income' ? renderIncome() : renderExpenses();
+  refreshSummary();
+  save();
+}
+
+// ── Event delegation ──────────────────────────────────────────────────────────
+document.addEventListener('input', e => {
+  const el = e.target;
+  if (!el.dataset.id || !el.dataset.t) return;
+  const row = state[el.dataset.t].find(r => r.id === el.dataset.id);
+  if (!row) return;
+  row[el.dataset.f] = el.value;
+  refreshSummary();
+  save();
+});
+
+document.addEventListener('change', e => {
+  const el = e.target;
+  if (el.tagName !== 'SELECT' || !el.dataset.id) return;
+  const row = state.expenses.find(r => r.id === el.dataset.id);
+  if (!row) return;
+  const id = el.dataset.id;
+  row[el.dataset.f] = el.value;
+
+  if (el.dataset.f === 'willRefund') {
+    el.className = 'rsel' + (el.value === 'yes' ? ' will-yes' : '');
+    const will = el.value === 'yes';
+    const isRefundedSel = document.querySelector(`select[data-id="${id}"][data-f="isRefunded"]`);
+    const amtInput      = document.querySelector(`input[data-id="${id}"][data-f="refundAmt"]`);
+    if (isRefundedSel) {
+      isRefundedSel.disabled = !will;
+      if (!will) { isRefundedSel.value = 'no'; row.isRefunded = 'no'; isRefundedSel.className = 'rsel'; }
+    }
+    if (amtInput) {
+      amtInput.disabled = !will;
+      amtInput.closest('.money-wrap').classList.toggle('disabled', !will);
+      if (!will) { amtInput.value = ''; row.refundAmt = ''; }
+    }
+  } else if (el.dataset.f === 'isRefunded') {
+    el.className = 'rsel' + (el.value === 'yes' ? ' got-yes' : '');
+  }
+  refreshSummary();
+  save();
+});
+
+// ── Boot: load from Firebase, then listen for remote changes ──────────────────
+stateRef.once('value', snapshot => {
+  const data = snapshot.val();
+  if (data) {
+    state = data;
+  } else {
+    defaults();
+    stateRef.set(JSON.parse(JSON.stringify(state)));
+  }
+  renderAll();
+  document.getElementById('saved-badge').style.opacity = '0.4';
+
+  // Hide loading overlay
+  const overlay = document.getElementById('loading-overlay');
+  overlay.style.opacity = '0';
+  setTimeout(() => overlay.remove(), 400);
+
+  // Real-time listener for changes coming from another device
+  stateRef.on('value', snapshot => {
+    if (localWrite) return; // our own write, skip
+    const remote = snapshot.val();
+    if (!remote) return;
+    // Only re-render tables if user isn't actively typing in a field
+    const active = document.activeElement;
+    const editing = active && (active.tagName === 'INPUT' || active.tagName === 'SELECT');
+    state = remote;
+    if (!editing) {
+      renderIncome();
+      renderExpenses();
+    }
+    refreshSummary();
+  });
+});
+</script>
+</body>
+</html>
