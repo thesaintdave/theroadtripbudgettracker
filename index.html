@@ -262,6 +262,19 @@
     .rsel.got-yes  { border-color: var(--orange); color: var(--orange); background: rgba(245,132,38,0.10); }
     .rsel:disabled { opacity: 0.4; cursor: not-allowed; }
 
+    .btn-note {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 0.95rem;
+      padding: 5px 7px;
+      border-radius: 2px;
+      color: #C2C7CF;
+      transition: all .14s ease;
+    }
+    .btn-note:hover { background: var(--field-hover); color: var(--ink); }
+    .btn-note.has-note { color: var(--blue); }
+
     .empty-row td {
       text-align: center;
       padding: 28px;
@@ -369,7 +382,7 @@
             <th style="width:100%">Expense</th>
             <th class="r" style="min-width:110px">Amount</th>
             <th style="min-width:148px">Date</th>
-            <th style="min-width:180px">Note / Reason</th>
+            <th class="c" style="width:48px">Note</th>
             <th class="c" style="min-width:108px">Will Refund?</th>
             <th class="c" style="min-width:96px">Refunded?</th>
             <th class="r" style="min-width:108px">Refund Amt</th>
@@ -383,6 +396,19 @@
 
   <p class="foot">Synced to Firebase — your ledger persists across all devices</p>
 </main>
+
+<!-- Note popup modal -->
+<div id="note-modal" style="display:none; position:fixed; inset:0; z-index:200; align-items:center; justify-content:center;">
+  <div id="note-backdrop" style="position:absolute; inset:0; background:rgba(17,21,28,0.45);" onclick="closeNote()"></div>
+  <div style="position:relative; background:#fff; padding:22px 24px 20px; width:340px; max-width:92vw; box-shadow:0 8px 32px rgba(17,21,28,0.22);">
+    <div style="font-family:var(--f-label); font-size:0.66rem; font-weight:600; letter-spacing:0.16em; text-transform:uppercase; color:var(--muted); margin-bottom:10px;">Note / Reason</div>
+    <textarea id="note-text" rows="4" style="width:100%; border:1px solid var(--field-border); border-radius:2px; padding:10px; font-family:var(--f-body); font-size:0.97rem; color:var(--ink); resize:vertical;" placeholder="Add a note…"></textarea>
+    <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:14px;">
+      <button onclick="closeNote()" style="border:none; background:var(--paper); cursor:pointer; font-family:var(--f-label); font-weight:600; font-size:0.72rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); padding:9px 16px; border-radius:2px;">Cancel</button>
+      <button onclick="saveNote()" style="border:none; background:var(--blue); cursor:pointer; font-family:var(--f-label); font-weight:600; font-size:0.72rem; letter-spacing:0.1em; text-transform:uppercase; color:#fff; padding:9px 16px; border-radius:2px;">Save</button>
+    </div>
+  </div>
+</div>
 
 <script>
 // ── Firebase setup ────────────────────────────────────────────────────────────
@@ -551,9 +577,9 @@ function renderExpenses() {
       <td><input class="ti dt" type="date"
         data-id="${r.id}" data-f="date" data-t="expenses"
         value="${esc(r.date)}"></td>
-      <td><input class="ti note" type="text"
-        data-id="${r.id}" data-f="note" data-t="expenses"
-        value="${esc(r.note)}" placeholder="Add a note…"></td>
+      <td style="text-align:center">
+        <button class="btn-note${r.note ? ' has-note' : ''}" onclick="openNote('${r.id}')" title="${esc(r.note) || 'Add a note'}">✏</button>
+      </td>
       <td style="text-align:center">
         <select class="rsel${will ? ' will-yes' : ''}"
           data-id="${r.id}" data-f="willRefund" data-t="expenses">
@@ -643,6 +669,36 @@ document.addEventListener('change', e => {
   refreshSummary();
   save();
 });
+
+// ── Note popup ────────────────────────────────────────────────────────────────
+let activeNoteId = null;
+
+function openNote(id) {
+  activeNoteId = id;
+  const row = state.expenses.find(r => r.id === id);
+  document.getElementById('note-text').value = row ? (row.note || '') : '';
+  const modal = document.getElementById('note-modal');
+  modal.style.display = 'flex';
+  setTimeout(() => document.getElementById('note-text').focus(), 50);
+}
+
+function saveNote() {
+  if (!activeNoteId) return;
+  const row = state.expenses.find(r => r.id === activeNoteId);
+  if (row) {
+    row.note = document.getElementById('note-text').value;
+    renderExpenses();
+    save();
+  }
+  closeNote();
+}
+
+function closeNote() {
+  document.getElementById('note-modal').style.display = 'none';
+  activeNoteId = null;
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeNote(); });
 
 // ── Boot: load from Firebase, then listen for remote changes ──────────────────
 stateRef.once('value', snapshot => {
